@@ -116,8 +116,12 @@ function setupEventListeners() {
         }
         
         // If placing a wall and valid
-        if (gameState.mode === 'wall' && gameState.wallHoverState.ix !== -1 && gameState.wallHoverState.valid) {
-            placeWall(gameState.wallHoverState.ix, gameState.wallHoverState.iy, gameState.wallHoverState.orientation);
+        if (gameState.mode === 'wall' && gameState.wallHoverState.ix !== -1) {
+            // Double check validity directly at placement time to prevent loopholes or race conditions
+            const isValid = canPlaceWall(gameState.wallHoverState.ix, gameState.wallHoverState.iy, gameState.wallHoverState.orientation);
+            if (isValid) {
+                placeWall(gameState.wallHoverState.ix, gameState.wallHoverState.iy, gameState.wallHoverState.orientation);
+            }
         }
     });
 
@@ -128,6 +132,8 @@ function setupEventListeners() {
             gameState.wallHoverState.orientation = gameState.wallHoverState.orientation === 'h' ? 'v' : 'h';
             if (gameState.wallHoverState.ix !== -1) {
                 gameState.wallHoverState.valid = canPlaceWall(gameState.wallHoverState.ix, gameState.wallHoverState.iy, gameState.wallHoverState.orientation);
+            } else {
+                gameState.wallHoverState.valid = false;
             }
             renderBoard();
         }
@@ -138,6 +144,7 @@ function switchMode(newMode) {
     if (gameState.gameOver) return;
     gameState.mode = newMode;
     gameState.wallHoverState.ix = -1; // reset hover
+    gameState.wallHoverState.valid = false; // reset validity state
     modeMoveBtn.classList.toggle('active', newMode === 'move');
     modeWallBtn.classList.toggle('active', newMode === 'wall');
     
@@ -348,6 +355,7 @@ function placeWall(ix, iy, orientation) {
     
     // Once placed, reset hover state and end turn
     gameState.wallHoverState.ix = -1;
+    gameState.wallHoverState.valid = false; // reset validity state
     checkWinOrEndTurn();
 }
 
